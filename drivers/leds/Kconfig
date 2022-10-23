@@ -488,7 +488,7 @@ config LEDS_BLINKM
 	  through I2C. Say Y to enable support for the BlinkM LED.
 
 config LEDS_MAX77833_RGB
-    tristate "Led max77843 rgb"
+    tristate "Led max77833 rgb"
     depends on MFD_MAX77833 && LEDS_CLASS && I2C
     help
       If you say yes here you will get support for

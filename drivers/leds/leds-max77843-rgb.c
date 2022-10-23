@@ -173,7 +173,7 @@ static int max77843_rgb_number(struct led_classdev *led_cdev,
 
 	for (i = 0; i < 4; i++) {
 		if (led_cdev == &max77843_rgb->led[i]) {
-			pr_info("leds-max77843-rgb: %s, %d\n", __func__, i);
+			dev_dbg("leds-max77843-rgb: %s, %d\n", __func__, i);
 			return i;
 		}
 	}
@@ -921,15 +921,15 @@ out:
 static ssize_t led_delay_on_show(struct device *dev,
 			struct device_attribute *attr, char *buf)
 {
-	struct max77843_rgb *max77843_rgb = dev_get_drvdata(dev);
-	return sprintf(buf, "%d\n", max77843_rgb->delay_on_times_ms);
+	struct max77843_rgb *max77843_rgb = dev_get_drvdata(dev->parent);
+	return sprintf(buf, "%u\n", max77843_rgb->delay_on_times_ms);
 }
 
 static ssize_t led_delay_on_store(struct device *dev,
 			struct device_attribute *attr,
 			const char *buf, size_t count)
 {
-	struct max77843_rgb *max77843_rgb = dev_get_drvdata(dev);
+	struct max77843_rgb *max77843_rgb = dev_get_drvdata(dev->parent);
 	unsigned int time;
 
 	if (kstrtouint(buf, 0, &time)) {
@@ -945,16 +945,16 @@ static ssize_t led_delay_on_store(struct device *dev,
 static ssize_t led_delay_off_show(struct device *dev,
 			struct device_attribute *attr, char *buf)
 {
-	struct max77843_rgb *max77843_rgb = dev_get_drvdata(dev);
+	struct max77843_rgb *max77843_rgb = dev_get_drvdata(dev->parent);
 
-	return sprintf(buf, "%d\n", max77843_rgb->delay_off_times_ms);
+	return sprintf(buf, "%u\n", max77843_rgb->delay_off_times_ms);
 }
 
 static ssize_t led_delay_off_store(struct device *dev,
 			struct device_attribute *attr,
 			const char *buf, size_t count)
 {
-	struct max77843_rgb *max77843_rgb = dev_get_drvdata(dev);
+	struct max77843_rgb *max77843_rgb = dev_get_drvdata(dev->parent);
 	unsigned int time;
 
 	if (kstrtouint(buf, 0, &time)) {
@@ -972,11 +972,9 @@ static ssize_t led_blink_store(struct device *dev,
 			const char *buf, size_t count)
 {
 	const struct device *parent = dev->parent;
-	struct max77843_rgb *max77843_rgb_num = dev_get_drvdata(parent);
-	struct max77843_rgb *max77843_rgb = dev_get_drvdata(dev);
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct max77843_rgb *max77843_rgb = dev_get_drvdata(parent);
 	unsigned int blink_set;
-	int n = 0;
-	int i;
 
 	if (!sscanf(buf, "%1d", &blink_set)) {
 		dev_err(dev, "can not write led_blink\n");
@@ -988,15 +986,10 @@ static ssize_t led_blink_store(struct device *dev,
 		max77843_rgb->delay_off_times_ms = LED_OFF;
 	}
 
-	for (i = 0; i < 4; i++) {
-		if (dev == max77843_rgb_num->led[i].dev)
-			n = i;
-	}
-
-	max77843_rgb_blink(max77843_rgb_num->led[n].dev->parent,
+	max77843_rgb_blink(parent,
 		max77843_rgb->delay_on_times_ms,
 		max77843_rgb->delay_off_times_ms);
-	max77843_rgb_set_state(&max77843_rgb_num->led[n], led_dynamic_current, LED_BLINK);
+	max77843_rgb_set_state(led_cdev, led_dynamic_current, LED_BLINK);
 
 	pr_info("leds-max77843-rgb: %s\n", __func__);
 	return count;
